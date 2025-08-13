@@ -34,8 +34,8 @@ MONGO_URI=your_mongodb_atlas_connection
 JWT_SECRET=your_strong_secret
 PYTHON_SERVICE_URL=http://localhost:8000
 ```
-## Run Backend Server
 ```
+# Run Backend Server
 Command to run Backend Server "npx nodemon server.js"
 
 ## Frontend Setup
@@ -47,7 +47,8 @@ npm install axios react-router-dom
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 ```
-##📚 Configure Tailwind
+```
+## 📚 Configure Tailwind
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: { extend: {} },
@@ -58,14 +59,15 @@ Add to src/index.css
 @tailwind components;
 @tailwind utilities;
 ```
-
+```
 ## ▶️ Run Frontend
 npm start
 
 ## Python Service Setup
     Navigate to cd ../python-service
 ```
-##Install Dependencies
+```
+## Install Dependencies
 python -m venv venv
 # Activate venv
 # Windows:
@@ -73,11 +75,12 @@ venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
 pip install flask requests pymupdf python-docx google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
-
+```
 ```
 ## Run Python
-python app.py
+   python app.py
 
+```
 ```
 ## MongoDB Atlas Setup
 Go to MongoDB Atlas
@@ -86,16 +89,19 @@ Get your connection string.
 Replace it in the .env file under MONGO_URI.
 
 ```
+```
 ## Deployment(Docker)
     docker build -t mern-integration-backend .
     docker run -d -p 5000:5000 --env-file .env mern-integration-backend
 ```
-##Frontend Build
+```
+## Frontend Build
 cd frontend
 npm run build
+``
 
-
-🌟 Features Implemented
+```
+🌟 ##Features Implemented
 ✅ Admin Login using JWT Authentication
 ✅ Candidate Management: View, filter, shortlist, reject
 ✅ Python Automation: WhatsApp message sending & Gmail CV parsing
@@ -110,6 +116,7 @@ Ensure backend, frontend, and python-service run simultaneously for full functio
 Keep .env files private and never push them to GitHub.
 
 When running locally, ensure localhost ports don’t conflict.
+```
 
 
 
