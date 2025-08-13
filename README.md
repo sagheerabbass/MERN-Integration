@@ -100,8 +100,7 @@ cd frontend
 npm run build
 ```
 
-```
-🌟 ##Features Implemented
+🌟 Features Implemented
 ✅ Admin Login using JWT Authentication
 ✅ Candidate Management: View, filter, shortlist, reject
 ✅ Python Automation: WhatsApp message sending & Gmail CV parsing
@@ -116,7 +115,7 @@ Ensure backend, frontend, and python-service run simultaneously for full functio
 Keep .env files private and never push them to GitHub.
 
 When running locally, ensure localhost ports don’t conflict.
-```
+
 
 
 
