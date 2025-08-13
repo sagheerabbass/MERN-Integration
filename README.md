@@ -69,10 +69,10 @@ npm start
 ```
 ## Install Dependencies
 python -m venv venv
-# Activate venv
-# Windows:
+Activate venv
+Windows:
 venv\Scripts\activate
-# macOS/Linux:
+macOS/Linux:
 source venv/bin/activate
 pip install flask requests pymupdf python-docx google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
 ```
