@@ -96,9 +96,9 @@ Replace it in the .env file under MONGO_URI.
 ```
 ```
 ## Frontend Build
-cd frontend
+cd frontend 
 npm run build
-``
+```
 
 ```
 🌟 ##Features Implemented
