@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
   const [filteredCandidates, setFilteredCandidates] = useState([]);
   const [filter, setFilter] = useState({ name: '', domain: '', status: '' });
@@ -154,10 +155,23 @@ const AdminDashboard = () => {
         .catch(error => console.error('Error updating interview answers:', error));
     }
   };
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard - Candidate Management</h1>
+       <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Admin Dashboard - Candidate Management</h1>
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200"
+        >
+          Logout
+        </button>
+      </div>
+      {/* <h1 className="text-2xl font-bold mb-4">Admin Dashboard - Candidate Management</h1> */}
 
       {/* Filter Section */}
       <div className="mb-4 p-4 bg-gray-100 rounded-lg">
