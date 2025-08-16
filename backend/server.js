@@ -3,9 +3,14 @@ const dotenv = require('dotenv')
 dotenv.config()
 const mongoose = require('mongoose');
 const candidatesRoute = require('./routes/candidateRoutes');
+const logRoutes = require('./routes/logRoutes')
+const cors = require("cors");
+
+
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // MongoDB connection with better error handling
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/candidate_management';
@@ -20,7 +25,7 @@ mongoose.connect(MONGO_URI)
 
 // Routes
 app.use('/api/candidates', candidatesRoute);
-
+app.use('/api/logs',logRoutes)
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 

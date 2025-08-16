@@ -14,7 +14,7 @@ const AdminDashboard = () => {
   // Fetch candidates and logs on mount
   useEffect(() => {
     axios
-      .get('/api/candidates')
+      .get('http://localhost:5000/api/candidates')
       .then(response => {
         setCandidates(response.data.candidates || []);
         setFilteredCandidates(response.data.candidates || []);
@@ -22,7 +22,7 @@ const AdminDashboard = () => {
       .catch(error => console.error('Error fetching candidates:', error));
 
     axios
-      .get('/api/logs')
+      .get('http://localhost:5000/api/logs')
       .then(response => setActionLogs(response.data.logs || []))
       .catch(error => console.error('Error fetching logs:', error));
   }, []);
@@ -69,7 +69,7 @@ const AdminDashboard = () => {
     if (currentCandidate) {
       // Update candidate status
       axios
-        .patch(`/api/candidates/${currentCandidate._id}/status`, { status: candidateData.status })
+        .patch(`http://localhost:5000/api/candidates/${currentCandidate._id}/status`, { status: candidateData.status })
         .then(response => {
           setCandidates(
             candidates.map(c =>
@@ -82,16 +82,18 @@ const AdminDashboard = () => {
     } else {
       // Add new candidate
       axios
-        .post('/api/candidates', {
+        .post('http://localhost:5000/api/candidates', {
           name: candidateData.name,
           email: candidateData.email,
           domain: candidateData.domain,
           interview_answers: candidateData.interview_answers
             ? candidateData.interview_answers.split(',').map(answer => answer.trim())
             : [],
+             status: candidateData.status,
         })
         .then(response => {
           setCandidates([...candidates, response.data.candidate]);
+          console.log(response.data)
           fetchLogs();
         })
         .catch(error => console.error('Error adding candidate:', error));
@@ -101,7 +103,7 @@ const AdminDashboard = () => {
 
   const handleShortlist = id => {
     axios
-      .patch(`/api/candidates/${id}/status`, { status: 'Shortlisted' })
+      .patch(`http://localhost:5000/api/candidates/${id}/status`, { status: 'Shortlisted' })
       .then(response => {
         setCandidates(candidates.map(c => (c._id === id ? response.data.candidate : c)));
         fetchLogs();
@@ -111,7 +113,7 @@ const AdminDashboard = () => {
 
   const handleReject = id => {
     axios
-      .patch(`/api/candidates/${id}/status`, { status: 'Rejected' })
+      .patch(`http://localhost:5000/api/candidates/${id}/status`, { status: 'Rejected' })
       .then(response => {
         setCandidates(candidates.map(c => (c._id === id ? response.data.candidate : c)));
         fetchLogs();
@@ -121,7 +123,7 @@ const AdminDashboard = () => {
 
   const handleInvite = id => {
     axios
-      .post(`/api/candidates/${id}/invite`)
+      .post(`http://localhost:5000/api/candidates/${id}/invite`)
       .then(response => {
         alert(response.data.message || 'WhatsApp invite sent successfully!');
         fetchLogs();
@@ -131,7 +133,7 @@ const AdminDashboard = () => {
 
   const fetchLogs = () => {
     axios
-      .get('/api/logs')
+      .get('http://localhost:5000/api/logs')
       .then(response => setActionLogs(response.data.logs || []))
       .catch(error => console.error('Error fetching logs:', error));
   };
@@ -140,7 +142,7 @@ const AdminDashboard = () => {
     if (currentCandidate) {
       const updatedAnswers = editedAnswers.split(',').map(answer => answer.trim());
       axios
-        .patch(`/api/candidates/${currentCandidate._id}`, { interview_answers: updatedAnswers })
+        .patch(`http://localhost:5000/api/candidates/${currentCandidate._id}`, { interview_answers: updatedAnswers })
         .then(response => {
           setCandidates(
             candidates.map(c =>

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const logSchema = new mongoose.Schema({
   action: String, // e.g. "Invite sent"
-  candidate_id: mongoose.Schema.Types.ObjectId,
+    candidate_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' }, // add ref
   timestamp: { type: Date, default: Date.now }
 });
 
