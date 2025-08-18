@@ -11,22 +11,30 @@ const AdminDashboard = () => {
   const [actionLogs, setActionLogs] = useState([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [editedAnswers, setEditedAnswers] = useState('');
+axios.defaults.baseURL = "http://localhost:5000/api/v1";
+
+// Grab token from localStorage
+const token = localStorage.getItem("token");
+if (token) {
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+}
 
   // Fetch candidates and logs on mount
   useEffect(() => {
-    axios
-      .get('http://localhost:5000/api/candidates')
-      .then(response => {
-        setCandidates(response.data.candidates || []);
-        setFilteredCandidates(response.data.candidates || []);
-      })
-      .catch(error => console.error('Error fetching candidates:', error));
+  axios
+    .get('/candidates')
+    .then(response => {
+      setCandidates(response.data.candidates || []);
+      setFilteredCandidates(response.data.candidates || []);
+    })
+    .catch(error => console.error('Error fetching candidates:', error));
 
-    axios
-      .get('http://localhost:5000/api/logs')
-      .then(response => setActionLogs(response.data.logs || []))
-      .catch(error => console.error('Error fetching logs:', error));
-  }, []);
+  axios
+    .get('/logs')
+    .then(response => setActionLogs(response.data.logs || []))
+    .catch(error => console.error('Error fetching logs:', error));
+}, []);
+
 
   // Filter candidates based on input
   useEffect(() => {
@@ -69,8 +77,7 @@ const AdminDashboard = () => {
   const handleSave = candidateData => {
     if (currentCandidate) {
       // Update candidate status
-      axios
-        .patch(`http://localhost:5000/api/candidates/${currentCandidate._id}/status`, { status: candidateData.status })
+      axios.patch(`/candidates/${currentCandidate._id}/status`, { status: candidateData.status })
         .then(response => {
           setCandidates(
             candidates.map(c =>
@@ -83,7 +90,7 @@ const AdminDashboard = () => {
     } else {
       // Add new candidate
       axios
-        .post('http://localhost:5000/api/candidates', {
+        .post('/candidates', {
           name: candidateData.name,
           email: candidateData.email,
           domain: candidateData.domain,
@@ -104,7 +111,7 @@ const AdminDashboard = () => {
 
   const handleShortlist = id => {
     axios
-      .patch(`http://localhost:5000/api/candidates/${id}/status`, { status: 'Shortlisted' })
+      .patch(`/candidates/${id}/status`, { status: 'Shortlisted' })
       .then(response => {
         setCandidates(candidates.map(c => (c._id === id ? response.data.candidate : c)));
         fetchLogs();
@@ -114,7 +121,7 @@ const AdminDashboard = () => {
 
   const handleReject = id => {
     axios
-      .patch(`http://localhost:5000/api/candidates/${id}/status`, { status: 'Rejected' })
+      .patch(`/candidates/${id}/status`, { status: 'Rejected' })
       .then(response => {
         setCandidates(candidates.map(c => (c._id === id ? response.data.candidate : c)));
         fetchLogs();
@@ -124,7 +131,7 @@ const AdminDashboard = () => {
 
   const handleInvite = id => {
     axios
-      .post(`http://localhost:5000/api/candidates/${id}/invite`)
+      .post(`/candidates/${id}/invite`)
       .then(response => {
         alert(response.data.message || 'WhatsApp invite sent successfully!');
         fetchLogs();
@@ -134,7 +141,7 @@ const AdminDashboard = () => {
 
   const fetchLogs = () => {
     axios
-      .get('http://localhost:5000/api/logs')
+      .get('/logs')
       .then(response => setActionLogs(response.data.logs || []))
       .catch(error => console.error('Error fetching logs:', error));
   };
@@ -143,7 +150,7 @@ const AdminDashboard = () => {
     if (currentCandidate) {
       const updatedAnswers = editedAnswers.split(',').map(answer => answer.trim());
       axios
-        .patch(`http://localhost:5000/api/candidates/${currentCandidate._id}`, { interview_answers: updatedAnswers })
+        .patch(`/candidates/${currentCandidate._id}`, { interview_answers: updatedAnswers })
         .then(response => {
           setCandidates(
             candidates.map(c =>
