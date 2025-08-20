@@ -4,6 +4,10 @@
 
 ---
 
+To run the python service run the whatspp_service_api file in AI_Intern folder
+and update the python_service_url to port 5001
+
+
 ## 📦 Project Structure
 
 MERN-Integration/
@@ -32,7 +36,7 @@ npm install --save-dev nodemon
 PORT=5000
 MONGO_URI=your_mongodb_atlas_connection
 JWT_SECRET=your_strong_secret
-PYTHON_SERVICE_URL=http://localhost:8000
+PYTHON_SERVICE_URL=http://localhost:5001
 ```
 ```
 # Run Backend Server
