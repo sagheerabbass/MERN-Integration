@@ -74,40 +74,31 @@ if (token) {
     setIsDetailsModalOpen(false);
   };
 
-  const handleSave = candidateData => {
-    if (currentCandidate) {
-      // Update candidate status
-      axios.patch(`/candidates/${currentCandidate._id}/status`, { status: candidateData.status })
-        .then(response => {
-          setCandidates(
-            candidates.map(c =>
-              c._id === currentCandidate._id ? response.data.candidate : c,
-            ),
-          );
-          fetchLogs();
-        })
-        .catch(error => console.error('Error updating candidate:', error));
-    } else {
-      // Add new candidate
-      axios
-        .post('/candidates', {
-          name: candidateData.name,
-          email: candidateData.email,
-          domain: candidateData.domain,
-          interview_answers: candidateData.interview_answers
-            ? candidateData.interview_answers.split(',').map(answer => answer.trim())
-            : [],
-             status: candidateData.status,
-        })
-        .then(response => {
-          setCandidates([...candidates, response.data.candidate]);
-          console.log(response.data)
-          fetchLogs();
-        })
-        .catch(error => console.error('Error adding candidate:', error));
-    }
-    closeModal();
-  };
+  const handleSave = () => {
+  if (currentCandidate) {
+    // Update candidate status
+    axios.patch(`/candidates/${currentCandidate._id}/status`, { status: currentCandidate.status })
+      .then(response => {
+        setCandidates(
+          candidates.map(c =>
+            c._id === currentCandidate._id ? response.data.candidate : c
+          )
+        );
+        fetchLogs();
+      })
+      .catch(error => console.error('Error updating candidate:', error));
+  } else {
+    // 🚀 Trigger automation workflow
+    axios.post('/candidates', {})
+      .then(response => {
+        setCandidates([...candidates, response.data.candidate]);
+        fetchLogs();
+      })
+      .catch(error => console.error('Error adding candidate:', error));
+  }
+  closeModal();
+};
+
 
   const handleShortlist = id => {
     axios
@@ -218,7 +209,7 @@ if (token) {
 
       {/* Add Candidate Button */}
       <button
-        onClick={() => openModal()}
+        onClick={() => handleSave()}
         className="mb-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
       >
         Add Candidate

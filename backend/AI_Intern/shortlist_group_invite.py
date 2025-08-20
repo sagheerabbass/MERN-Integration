@@ -5,6 +5,7 @@ import urllib.parse
 import webbrowser
 from datetime import datetime
 import time
+import requests
 
 class ShortlistGroupInvite:
     def __init__(self):
@@ -64,53 +65,68 @@ CodeCelix Team"""
         
         print(f"📊 Loaded {len(responses_df)} candidate responses with phone numbers")
         return responses_df
+    
+    
 
     def auto_evaluate_candidates(self):
-        """Automatically evaluate candidates based on response quality and technical score"""
-        df = self.load_candidate_responses()
-        
-        if df.empty:
-            return df
-        
-        updated_count = 0
-        
-        for index, row in df.iterrows():
-            if pd.notna(row['next_step']) and row['next_step'] != '':
-                continue
-            
-            response_quality = str(row.get('response_quality', '')).strip()
-            technical_score = row.get('technical_score', '')
-            
-            try:
-                score = int(float(technical_score)) if technical_score != '' else 0
-            except (ValueError, TypeError):
-                score = 0
-            
-            if response_quality.lower() == 'poor' or score <= 5:
-                df.at[index, 'next_step'] = "Reject"
-                df.at[index, 'notes'] = df.at[index, 'notes'] + f" [Auto-rejected: Quality={response_quality}, Score={score}]"
-                print(f"❌ Auto-rejected: {row['name']} (Quality: {response_quality}, Score: {score})")
-                
-            elif response_quality.lower() in ['good', 'excellent'] and score > 5:
-                df.at[index, 'next_step'] = "Shortlist"
-                df.at[index, 'notes'] = df.at[index, 'notes'] + f" [Auto-approved: Quality={response_quality}, Score={score}]"
-                print(f"✅ Auto-shortlisted: {row['name']} (Quality: {response_quality}, Score: {score})")
-                
-            else:
-                if response_quality.lower() != 'poor' and score != 0:
-                    df.at[index, 'next_step'] = "Shortlist"
-                    df.at[index, 'notes'] = df.at[index, 'notes'] + f" [Auto-approved (default): Quality={response_quality}, Score={score}]"
-                    print(f"✅ Auto-shortlisted (default): {row['name']} (Quality: {response_quality}, Score: {score})")
-                else:
-                    df.at[index, 'next_step'] = "More Questions"
-                    print(f"❓ Needs review: {row['name']} (Quality: {response_quality}, Score: {score})")
-            
-            updated_count += 1
-        
-        df.to_csv(self.responses_csv, index=False)
-        print(f"\n💾 Auto-evaluated {updated_count} candidates")
-        
-        return df
+         """Automatically evaluate candidates based on response quality and technical score"""
+         df = self.load_candidate_responses()
+
+         if df.empty:
+             return df
+
+    # 🔥 Ensure string dtype for next_step and notes
+         if "next_step" not in df.columns:
+               df["next_step"] = ""
+         df["next_step"] = df["next_step"].astype(str)
+
+         if "notes" not in df.columns:
+               df["notes"] = ""
+         df["notes"] = df["notes"].astype(str)
+
+         updated_count = 0
+
+         for index, row in df.iterrows():
+              if pd.notna(row['next_step']) and row['next_step'].strip() != '':
+                  continue
+
+              response_quality = str(row.get('response_quality', '')).strip()
+              technical_score = row.get('technical_score', '')
+
+              try:
+                 score = int(float(technical_score)) if technical_score != '' else 0
+              except (ValueError, TypeError):
+                  score = 0
+
+              if response_quality.lower() == 'poor' or score <= 5:
+                   df.at[index, 'next_step'] = "Reject"
+                   df.at[index, 'notes'] += f" [Auto-rejected: Quality={response_quality}, Score={score}]"
+                   print(f"❌ Auto-rejected: {row['name']} (Quality: {response_quality}, Score: {score})")
+
+              elif response_quality.lower() in ['good', 'excellent'] and score > 5:
+                  df.at[index, 'next_step'] = "Shortlist"
+                  df.at[index, 'notes'] += f" [Auto-approved: Quality={response_quality}, Score={score}]"
+                  print(f"✅ Auto-shortlisted: {row['name']} (Quality: {response_quality}, Score: {score})")
+
+              else:
+                  if response_quality.lower() != 'poor' and score != 0:
+                      df.at[index, 'next_step'] = "Shortlist"
+                      df.at[index, 'notes'] += f" [Auto-approved (default): Quality={response_quality}, Score={score}]"
+                      print(f"✅ Auto-shortlisted (default): {row['name']} (Quality: {response_quality}, Score: {score})")
+                  else:
+                      df.at[index, 'next_step'] = "More Questions"
+                      print(f"❓ Needs review: {row['name']} (Quality: {response_quality}, Score: {score})")
+
+              updated_count += 1
+
+         df.to_csv(self.responses_csv, index=False)
+         print(f"\n💾 Auto-evaluated {updated_count} candidates")
+         if updated_count==0:
+             return
+
+         return df
+
+
 
     def get_shortlisted_candidates(self, df=None):
         """Get candidates marked for shortlisting"""
@@ -311,8 +327,10 @@ CodeCelix Team"""
         """Process all shortlisted candidates and optionally send rejections"""
         df = self.auto_evaluate_candidates()
         
+        
         if df.empty:
             return
+
         
         shortlisted = self.get_shortlisted_candidates(df)
         

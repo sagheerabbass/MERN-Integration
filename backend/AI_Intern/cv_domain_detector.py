@@ -183,7 +183,7 @@ class CVDomainDetector:
         max_possible_score = 500
         confidence = min(int((max_score / max_possible_score) * 100), 100)
         
-        if confidence < 15:
+        if confidence < 10:
             return "Unknown", confidence, []
         
         return best_domain, confidence, all_keywords_found[best_domain]
@@ -268,7 +268,7 @@ class CVDomainDetector:
                 df.at[index, 'cv_text_preview'] = "Text extraction failed"
                 continue
             
-            cv_preview = cv_text[:1000].strip()
+            cv_preview = cv_text[:10000].strip()
             df.at[index, 'cv_text_preview'] = cv_preview
             
             domain, confidence, keywords_found = self.detect_domain(cv_text)
@@ -291,7 +291,7 @@ class CVDomainDetector:
         
         self.show_domain_summary(df)
         
-        return df
+        return domain,cv_preview
     
     def show_domain_summary(self, df):
         """Show summary of domain distribution"""

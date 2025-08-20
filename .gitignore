@@ -42,3 +42,9 @@ temp/
 # Local database files
 *.sqlite
 *.db
+
+backend/AI_Intern/__pycache__
+backend/AI_Intern/data
+backend/AI_Intern/downloaded_cvs
+backend/AI_Intern/credentials.json
+backend/AI_Intern/token.pickle

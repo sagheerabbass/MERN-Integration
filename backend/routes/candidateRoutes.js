@@ -1,138 +1,73 @@
 const express = require('express');
-const router = express.Router();
+const axios = require('axios');
 const Candidate = require('../models/Candidate');
 const Log = require('../models/Log');
-const { StatusCodes } = require('http-status-codes');
 
-// POST /api/candidates - Create a new candidate (for Python service)
+const router = express.Router();
+
+// POST /api/candidates - Create a new candidate
 router.post('/', async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      skills,
-      experience,
-      resumeUrl,
-      appliedPosition,
-      score = 0,
-      source = 'ai_intern'
-    } = req.body;
+    // Call Python automation (no request body required now)
+    const pythonResponse = await axios.post(
+      `${process.env.PYTHON_SERVICE_URL}/run-workflow`,
+      {},
+      { headers: { 'Authorization': `Bearer ${process.env.JWT_SECRET}` } }
+    );
 
-    // Validate required fields
-    if (!name || !email || !phone || !skills || !experience || !resumeUrl || !appliedPosition) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'All required fields must be provided'
-      });
+    const workflowCandidate = pythonResponse.data.candidate;
+
+    if (!workflowCandidate || !workflowCandidate.email) {
+      return res.status(400).json({ error: 'No candidate data returned from workflow' });
     }
 
-    // Check if candidate already exists
-    const existingCandidate = await Candidate.findOne({ email });
+    // Prevent duplicate candidates
+    const existingCandidate = await Candidate.findOne({ email: workflowCandidate.email });
     if (existingCandidate) {
-      return res.status(StatusCodes.CONFLICT).json({
-        success: false,
-        message: 'Candidate with this email already exists',
-        data: existingCandidate
-      });
+      return res.status(409).json({ error: 'Candidate already exists' });
     }
 
-    const candidate = await Candidate.create({
-      name,
-      email,
-      phone,
-      skills,
-      experience,
-      resumeUrl,
-      appliedPosition,
-      score,
-      source
-    });
+    // Save candidate in MongoDB
+    const candidate = new Candidate(workflowCandidate);
+    await candidate.save();
 
-    // Log the creation
+    // Log the automation action
     await Log.create({
-      action: `Candidate ${name} created with position ${appliedPosition}`,
+      action: `Candidate ${candidate.name} processed via automation (domain: ${candidate.domain})`,
       candidate_id: candidate._id
     });
 
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: 'Candidate created successfully',
-      data: candidate
+    res.status(201).json({
+      message: 'Candidate created and processed successfully',
+      candidate
     });
   } catch (error) {
-    console.error('Error creating candidate:', error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error creating candidate',
-      error: error.message
-    });
+    console.error('Error in workflow candidate creation:', error.message || error);
+    res.status(500).json({ error: 'Server error while creating candidate with workflow' });
   }
 });
 
-// GET /api/candidates - Get all candidates with filtering
+
+// GET /api/candidates - Fetch all candidates with optional filtering
 router.get('/', async (req, res) => {
   try {
-    const { 
-      domain, 
-      status, 
-      source, 
-      minExperience, 
-      maxExperience, 
-      minScore, 
-      maxScore,
-      search,
-      page = 1,
-      limit = 10
-    } = req.query;
-
+    const { domain, status } = req.query;
+    
     // Build filter object
     const filter = {};
-    
-    if (domain) filter.appliedPosition = { $regex: domain, $options: 'i' };
+    if (domain) filter.domain = domain;
     if (status) filter.status = status;
-    if (source) filter.source = source;
-    if (minExperience) filter.experience = { $gte: parseInt(minExperience) };
-    if (maxExperience) filter.experience = { ...filter.experience, $lte: parseInt(maxExperience) };
-    if (minScore) filter.score = { $gte: parseInt(minScore) };
-    if (maxScore) filter.score = { ...filter.score, $lte: parseInt(maxScore) };
-    
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { appliedPosition: { $regex: search, $options: 'i' } }
-      ];
-    }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
     const candidates = await Candidate.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Candidate.countDocuments(filter);
+      .sort({ created_at: -1 });
 
     res.json({
-      success: true,
-      data: {
-        candidates,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
-      }
+      candidates,
+      count: candidates.length
     });
   } catch (error) {
     console.error('Error fetching candidates:', error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error fetching candidates',
-      error: error.message
-    });
+    res.status(500).json({ error: 'Server error while fetching candidates' });
   }
 });
 
@@ -143,22 +78,19 @@ router.patch('/:id/status', async (req, res) => {
     const { status } = req.body;
 
     // Validate status
-    const validStatuses = ['pending', 'shortlisted', 'rejected', 'interviewed', 'hired'];
+    const validStatuses = ['New', 'Shortlisted', 'Rejected'];
     if (!validStatuses.includes(status)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+      return res.status(400).json({ 
+        error: 'Invalid status. Must be one of: New, Shortlisted, Rejected' 
       });
     }
 
     const candidate = await Candidate.findById(id);
     if (!candidate) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: 'Candidate not found'
-      });
+      return res.status(404).json({ error: 'Candidate not found' });
     }
 
+    // Update status
     const oldStatus = candidate.status;
     candidate.status = status;
     await candidate.save();
@@ -170,88 +102,55 @@ router.patch('/:id/status', async (req, res) => {
     });
 
     res.json({
-      success: true,
       message: 'Status updated successfully',
-      data: candidate
+      candidate
     });
   } catch (error) {
     console.error('Error updating status:', error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error updating status',
-      error: error.message
-    });
+    res.status(500).json({ error: 'Server error while updating status' });
   }
 });
 
-// GET /api/candidates/:id - Get single candidate
-router.get('/:id', async (req, res) => {
+// GET /api/logs - Retrieve all action logs
+router.get('/logs', async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const candidate = await Candidate.findById(id);
-    if (!candidate) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: 'Candidate not found'
-      });
-    }
+    const logs = await Log.find()
+      .populate('candidate_id', 'name email domain')
+      .sort({ timestamp: -1 });
 
     res.json({
-      success: true,
-      data: candidate
+      logs,
+      count: logs.length
     });
   } catch (error) {
-    console.error('Error fetching candidate:', error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error fetching candidate',
-      error: error.message
-    });
+    console.error('Error fetching logs:', error);
+    res.status(500).json({ error: 'Server error while fetching logs' });
   }
 });
 
-// GET /api/candidates/stats - Get candidate statistics
-router.get('/stats/overview', async (req, res) => {
+// POST /api/candidates/:id/invite - Send WhatsApp invite (existing endpoint)
+router.post('/:id/invite', async (req, res) => {
   try {
-    const totalCandidates = await Candidate.countDocuments();
-    const shortlisted = await Candidate.countDocuments({ status: 'shortlisted' });
-    const rejected = await Candidate.countDocuments({ status: 'rejected' });
-    const pending = await Candidate.countDocuments({ status: 'pending' });
-    const interviewed = await Candidate.countDocuments({ status: 'interviewed' });
-    const hired = await Candidate.countDocuments({ status: 'hired' });
+    const candidate = await Candidate.findById(req.params.id);
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
 
-    const topPositions = await Candidate.aggregate([
-      { $group: { _id: '$appliedPosition', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 5 }
-    ]);
+    // Send request to Python service
+    const pythonResponse = await axios.post(
+      `${process.env.PYTHON_SERVICE_URL}/send-invite`,
+      { email: candidate.email, name: candidate.name, domain: candidate.domain },
+      { headers: { 'Authorization': `Bearer ${process.env.JWT_SECRET}` } } // optional security
+    );
 
-    const recentCandidates = await Candidate.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('name email appliedPosition status createdAt');
-
-    res.json({
-      success: true,
-      data: {
-        total: totalCandidates,
-        shortlisted,
-        rejected,
-        pending,
-        interviewed,
-        hired,
-        topPositions,
-        recentCandidates
-      }
+    // Log the action
+    await Log.create({
+      action: `WhatsApp invite sent to ${candidate.name}`,
+      candidate_id: candidate._id
     });
+
+    res.json({ message: 'Invite triggered', python_response: pythonResponse.data });
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error fetching stats',
-      error: error.message
-    });
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
