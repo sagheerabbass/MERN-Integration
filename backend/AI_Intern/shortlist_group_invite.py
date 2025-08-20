@@ -12,7 +12,7 @@ class ShortlistGroupInvite:
         self.responses_csv = "data/candidate_responses.csv"
         self.shortlist_log_csv = "data/shortlist_invites_log.csv"
         
-        self.whatsapp_group_link = "https://chat.whatsapp.com/YOUR_GROUP_INVITE_LINK_HERE"
+        self.whatsapp_group_link = "https://chat.whatsapp.com/Hdn5sbDM3Uz2WYfSBKMILv?mode=ac_t"
         
         self.shortlist_message = """🎉 Congratulations! 🎉
 
@@ -77,10 +77,12 @@ CodeCelix Team"""
 
     # 🔥 Ensure string dtype for next_step and notes
          if "next_step" not in df.columns:
+               print("1")
                df["next_step"] = ""
-         df["next_step"] = df["next_step"].astype(str)
+         #df["next_step"] = df["next_step"].astype(str)
 
          if "notes" not in df.columns:
+               print("2")
                df["notes"] = ""
          df["notes"] = df["notes"].astype(str)
 
@@ -88,6 +90,7 @@ CodeCelix Team"""
 
          for index, row in df.iterrows():
               if pd.notna(row['next_step']) and row['next_step'].strip() != '':
+                  print("masla")
                   continue
 
               response_quality = str(row.get('response_quality', '')).strip()
@@ -121,8 +124,7 @@ CodeCelix Team"""
 
          df.to_csv(self.responses_csv, index=False)
          print(f"\n💾 Auto-evaluated {updated_count} candidates")
-         if updated_count==0:
-             return
+         
 
          return df
 
