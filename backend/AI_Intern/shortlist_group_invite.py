@@ -76,22 +76,18 @@ CodeCelix Team"""
              return df
 
     # 🔥 Ensure string dtype for next_step and notes
-         if "next_step" not in df.columns:
-               print("1")
-               df["next_step"] = ""
+         
          #df["next_step"] = df["next_step"].astype(str)
 
-         if "notes" not in df.columns:
-               print("2")
-               df["notes"] = ""
-         df["notes"] = df["notes"].astype(str)
+        
+         #df["notes"] = df["notes"].astype(str)
 
          updated_count = 0
 
          for index, row in df.iterrows():
-              if pd.notna(row['next_step']) and row['next_step'].strip() != '':
-                  print("masla")
-                  continue
+              if pd.notna(row['next_step']) and row['next_step'].strip() == '':
+                 print("masla")
+                 continue
 
               response_quality = str(row.get('response_quality', '')).strip()
               technical_score = row.get('technical_score', '')
